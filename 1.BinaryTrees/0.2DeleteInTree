@@ -1,0 +1,129 @@
+#include <fstream>
+#include <string>
+struct Node {
+    int value;
+    Node* left;
+    Node* right;
+    Node(int value) {
+        this->value = value;
+        this->left = nullptr;
+        this->right = nullptr;
+    }
+};
+
+class BinaryTree {
+    Node* root;
+
+private:
+    Node* insert_recursive(Node* curr_node, int value) {
+        if (curr_node == nullptr) {
+            return new Node(value);
+        }
+        if (value < curr_node->value) {
+            curr_node->left = insert_recursive(curr_node->left, value);
+        }
+        else if (value > curr_node->value) {
+            curr_node->right = insert_recursive(curr_node->right, value);
+        }
+        else {
+            return curr_node;
+        }
+        return curr_node;
+    }
+    Node* remove_recursive(Node* curr_node, int value) {
+        if (curr_node == nullptr) {
+            return nullptr;
+        }
+        if (value < curr_node->value) {
+            curr_node->left = remove_recursive(curr_node->left, value);
+        }
+        else if (value > curr_node->value) {
+            curr_node->right = remove_recursive(curr_node->right, value);
+        }
+        else {
+            if (curr_node->left == nullptr && curr_node->right == nullptr) {
+                return nullptr;
+            }
+            if (curr_node->left == nullptr) {
+                return curr_node->right;
+            }
+            if (curr_node->right == nullptr) {
+                return curr_node->left;
+            }
+            // this node will replace removing node
+            Node* replacing_node = curr_node->right;
+            Node* replacing_parrent_node = curr_node;
+            while (replacing_node->left != nullptr) {
+                replacing_parrent_node = replacing_node;
+                replacing_node = replacing_node->left;
+            }
+            if (curr_node != replacing_parrent_node) {
+                replacing_parrent_node->left = replacing_node->right;
+                replacing_node->right = curr_node->right;
+                replacing_node->left = curr_node->left;
+            }
+            else {
+                replacing_node->left = curr_node->left;
+            }
+            
+            
+
+            delete curr_node;
+
+            return replacing_node;
+        }
+        return curr_node;
+    }
+    template<class T> 
+    void pre_order_traversal_recursive(Node* curr_node, T action) {
+        if (curr_node == nullptr) {
+            return;
+        }
+        action(curr_node);
+        pre_order_traversal_recursive(curr_node->left, action);
+        pre_order_traversal_recursive(curr_node->right, action);
+        return;
+    }
+
+public:
+    BinaryTree() {
+        this->root = nullptr;
+    }
+    void remove(int value) {
+        this->root = remove_recursive(root, value);
+        return;
+    }
+    void insert(int value) {
+        this->root = insert_recursive(root, value);
+        return;
+    }
+    template<class T>
+    void pre_order_traversal(T action) {
+        pre_order_traversal_recursive(this->root, action);
+        return;
+    }
+};
+void pre_order_traversal_to_file(BinaryTree& tree, std::string filename= "output.txt") {
+    std::ofstream of(filename);
+    auto action = [&](Node* node) {
+        of << std::to_string(node->value) + '\n';
+    };
+    tree.pre_order_traversal(action);
+}
+void delete_in_tree(BinaryTree& tree, int to_delete) {
+    tree.remove(to_delete);
+    pre_order_traversal_to_file(tree);
+}
+int main() {
+    std::ifstream in("input.txt");
+    std::string line;
+    getline(in, line);
+    int to_delete = atoi(line.c_str());
+    getline(in, line);
+    BinaryTree tree;
+    while (std::getline(in, line)) {
+        tree.insert(atoi(line.c_str()));
+    }
+    delete_in_tree(tree,to_delete);
+
+}
